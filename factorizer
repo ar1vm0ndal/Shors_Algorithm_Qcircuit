@@ -1,0 +1,100 @@
+from qiskit import BasicAer, execute
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
+from qiskit.tools.visualization import plot_histogram
+import math
+
+def apply_amod15(qc, qr, cr, a):
+    if a == 2:
+        qc.cswap(qr[4], qr[3], qr[2])
+        qc.cswap(qr[4], qr[2], qr[1])
+        qc.cswap(qr[4], qr[1], qr[0])
+    elif a == 7:
+        qc.cswap(qr[4], qr[1], qr[0])
+        qc.cswap(qr[4], qr[2], qr[1])
+        qc.cswap(qr[4], qr[3], qr[2])
+        qc.cx(qr[4], qr[3])
+        qc.cx(qr[4], qr[2])
+        qc.cx(qr[4], qr[1])
+        qc.cx(qr[4], qr[0])
+    elif a == 8:
+        qc.cswap(qr[4], qr[1], qr[0])
+        qc.cswap(qr[4], qr[2], qr[1])
+        qc.cswap(qr[4], qr[3], qr[2])
+    elif a == 11:
+        qc.cswap(qr[4], qr[2], qr[0])
+        qc.cswap(qr[4], qr[3], qr[1])
+        qc.cx(qr[4], qr[3])
+        qc.cx(qr[4], qr[2])
+        qc.cx(qr[4], qr[1])
+        qc.cx(qr[4], qr[0])
+    elif a == 13:
+        qc.cswap(qr[4], qr[3], qr[2])
+        qc.cswap(qr[4], qr[2], qr[1])
+        qc.cswap(qr[4], qr[1], qr[0])
+        qc.cx(qr[4], qr[3])
+        qc.cx(qr[4], qr[2])
+        qc.cx(qr[4], qr[1])
+        qc.cx(qr[4], qr[0])
+
+def apply_aperiod15(qc, qr, cr, a):
+    if a == 11:
+        apply_11mod15(qc, qr, cr)
+        return
+
+    qc.x(qr[0])
+    qc.h(qr[4])
+    qc.h(qr[4])
+    qc.measure(qr[4], cr[0])
+    qc.reset(qr[4])
+    qc.h(qr[4])
+    qc.cx(qr[4], qr[2])
+    qc.cx(qr[4], qr[0])
+    qc.u1(math.pi / 2., qr[4]).c_if(cr, 1)
+    qc.h(qr[4])
+    qc.measure(qr[4], cr[1])
+    qc.reset(qr[4])
+    qc.h(qr[4])
+    apply_amod15(qc, qr, cr, a)
+    qc.u1(3. * math.pi / 4., qr[4]).c_if(cr, 3)
+    qc.u1(math.pi / 2., qr[4]).c_if(cr, 2)
+    qc.u1(math.pi / 4., qr[4]).c_if(cr, 1)
+    qc.h(qr[4])
+    qc.measure(qr[4], cr[2])
+
+def apply_11mod15(qc, qr, cr):
+    qc.x(qr[0])
+    qc.h(qr[4])
+    qc.h(qr[4])
+    qc.measure(qr[4], cr[0])
+    qc.reset(qr[4])
+    qc.h(qr[4])
+    qc.u1(math.pi / 2., qr[4]).c_if(cr, 1)
+    qc.h(qr[4])
+    qc.measure(qr[4], cr[1])
+    qc.reset(qr[4])
+    qc.h(qr[4])
+    qc.cx(qr[4], qr[3])
+    qc.cx(qr[4], qr[1])
+    qc.u1(3. * math.pi / 4., qr[4]).c_if(cr, 3)
+    qc.u1(math.pi / 2., qr[4]).c_if(cr, 2)
+    qc.u1(math.pi / 4., qr[4]).c_if(cr, 1)
+    qc.h(qr[4])
+    qc.measure(qr[4], cr[2])
+
+qreg = QuantumRegister(5, 'q')
+creg = ClassicalRegister(5, 'c')
+shor_circuit = QuantumCircuit(qreg, creg)
+apply_aperiod15(shor_circuit, qreg, creg, 7)
+n = N.bit_length()
+shor_algorithm = Shor(N)
+simulator = BasicAer.get_backend('qasm_simulator')
+t_circuit = transpile(shor_algorithm, simulator)
+job = simulator.run(t_circuit, shots=1024)
+result = job.result()
+counts = result.get_counts()
+factors = Shor.estimate(N, counts)
+backend = BasicAer.get_backend('qasm_simulator')
+sim_job = execute([shor_circuit], backend)
+sim_result = sim_job.result()
+sim_data = sim_result.get_counts(shor_circuit)
+plot_histogram(sim_data)
